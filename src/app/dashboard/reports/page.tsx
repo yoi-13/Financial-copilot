@@ -248,6 +248,21 @@ export default function ReportsPage() {
               </div>
             </details>
           )}
+          {selectedReport.expenses_snapshot?.length > 0 && (
+            <details className="text-sm">
+              <summary className="cursor-pointer font-medium text-muted-foreground hover:text-foreground">
+                Expenses breakdown ({selectedReport.expenses_snapshot.length} entries)
+              </summary>
+              <div className="mt-2 space-y-1">
+                {selectedReport.expenses_snapshot.map((item: any, i: number) => (
+                  <div key={i} className="flex justify-between py-1.5 border-b border-border/40 text-sm">
+                    <span>{item.description || item.note || `Expense ${i+1}`}</span>
+                    <span className="font-medium">-RM{Number(item.amount).toLocaleString()}</span>
+                  </div>
+                ))}
+              </div>
+            </details>
+          )}
           {selectedReport.inventory_snapshot?.length > 0 && (
             <details className="text-sm">
               <summary className="cursor-pointer font-medium text-muted-foreground hover:text-foreground">

@@ -99,6 +99,41 @@ export function generateReportPdf(report: any, includeInventory: boolean = true)
     y += 12;
   }
 
+  // ── Expenses Breakdown ──
+  const expItems = report.expenses_snapshot;
+  if (expItems && expItems.length > 0) {
+    if (y > 200) { doc.addPage(); y = 30; }
+
+    doc.setFont(FONT, 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(...COLORS.black);
+    doc.text('Expenses Breakdown', MARGIN, y);
+    y += 6;
+
+    const colX = [MARGIN, PAGE_W - MARGIN - 50];
+    doc.setFont(FONT, 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(...COLORS.gray);
+    doc.text('Description', colX[0], y);
+    doc.text('Amount', colX[1], y, { align: 'right' });
+    y += 2;
+    rect(doc, MARGIN, y, PAGE_W - 2 * MARGIN, 0.3, COLORS.light);
+    y += 5;
+
+    doc.setTextColor(...COLORS.black);
+    expItems.forEach((item: any) => {
+      doc.text(item.description || item.note || 'Expense', colX[0], y);
+      doc.text(`RM ${Number(item.amount).toLocaleString()}`, colX[1], y, { align: 'right' });
+      y += 6;
+    });
+
+    rect(doc, MARGIN, y - 3, PAGE_W - 2 * MARGIN, 0.3, COLORS.light);
+    doc.setFont(FONT, 'bold');
+    doc.text('Total', colX[0], y + 2);
+    doc.text(`RM ${expenses.toLocaleString()}`, colX[1], y + 2, { align: 'right' });
+    y += 12;
+  }
+
   // ── Inventory Snapshot (conditional) ──
   const inv = report.inventory_snapshot;
   if (includeInventory && inv && inv.length > 0) {
