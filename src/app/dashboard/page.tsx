@@ -4,8 +4,9 @@ import { supabase } from '@/lib/supabase';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, TrendingDown, AlertTriangle, ArrowRight, Package } from 'lucide-react';
+import { TrendingUp, TrendingDown, AlertTriangle, ArrowRight, Package, Loader2 } from 'lucide-react';
 import { CardSkeleton, ListSkeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/components/toast-provider';
 
 type Range = 'month' | 'year' | 'all';
 
@@ -20,6 +21,7 @@ const severityColor = 'bg-red-bg text-red border-red/30';
 const barColor = 'bg-red';
 
 export default function DashboardPage() {
+  const { toast } = useToast();
   const [dashboardLoading, setDashboardLoading] = useState(true);
   const [cumulativeLoading, setCumulativeLoading] = useState(true);
   const [userName, setUserName] = useState('');
@@ -27,6 +29,7 @@ export default function DashboardPage() {
   const [todayExpenses, setTodayExpenses] = useState(0);
   const [todaySales, setTodaySales] = useState<number | null>(null);
   const [dayClosed, setDayClosed] = useState(false);
+  const [restockingId, setRestockingId] = useState<string | null>(null);
   const [range, setRange] = useState<Range>('month');
   const [cumulative, setCumulative] = useState({ sales: 0, expenses: 0, net: 0, count: 0 });
 
@@ -80,6 +83,17 @@ export default function DashboardPage() {
   const displayNet = dayClosed || todaySales !== null ? (todaySales ?? 0) - todayExpenses : null;
   const tabs: { key: Range; label: string }[] = [{ key: 'month', label: 'Month' }, { key: 'year', label: 'Year' }, { key: 'all', label: 'All Time' }];
 
+  const quickRestock = async (item: any) => {
+    const qty = item.optimal_stock - item.current_stock;
+    if (qty <= 0) return;
+    setRestockingId(item.id);
+    const { error } = await supabase.from('inventory_items').update({ current_stock: item.optimal_stock }).eq('id', item.id);
+    setRestockingId(null);
+    if (error) { toast('Failed to restock.', 'error'); return; }
+    toast(`+${qty} ${item.unit} added to ${item.name}`, 'success');
+    setLowStock(prev => prev.filter((i: any) => i.id !== item.id));
+  };
+
   return (
     <div className="space-y-7">
       <h1 className="text-xl font-semibold tracking-tight">Good {now.getHours() < 12 ? 'morning' : 'evening'}, {userName || 'Loading...'}</h1>
@@ -116,9 +130,18 @@ export default function DashboardPage() {
                         <div className={`h-full rounded-full ${barColor}`} style={{ width: `${pct}%` }} />
                       </div>
                     </div>
-                    <div className={`text-xs font-semibold whitespace-nowrap px-2 py-0.5 rounded-[4px] border ${severityColor}`}>
-                      +{need} {item.unit}
-                    </div>
+                    <button
+                      onClick={() => quickRestock(item)}
+                      disabled={restockingId === item.id}
+                      className={`text-xs font-semibold whitespace-nowrap px-2 py-0.5 rounded-[4px] border cursor-pointer transition-opacity hover:opacity-80 disabled:opacity-60 ${severityColor}`}
+                      title="Click to restock to optimal level"
+                    >
+                      {restockingId === item.id ? (
+                        <Loader2 className="h-3 w-3 animate-spin inline" />
+                      ) : (
+                        <>+{need} {item.unit}</>
+                      )}
+                    </button>
                   </div>
                 );
               })}
