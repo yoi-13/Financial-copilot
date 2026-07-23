@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { ListSkeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/components/toast-provider';
 import { Receipt, Plus, Pencil, Trash2, X, Save, Ban, FileText } from 'lucide-react';
+import { compressImage } from '@/lib/compress-image';
 import { addExpense as addExpenseAction, updateExpense as updateExpenseAction, deleteExpense as deleteExpenseAction } from '@/lib/actions';
 import type { Expense } from '@/lib/database.types';
 
@@ -49,9 +50,9 @@ export default function ExpensesPage() {
     const { data: { user } } = await supabase.auth.getUser();
     let receiptUrl = '';
     if (receipt) {
-      const fileExt = receipt.name.split('.').pop();
-      const filePath = `${user?.id}/${Date.now()}.${fileExt}`;
-      const { data: upload } = await supabase.storage.from('receipts').upload(filePath, receipt);
+      const compressed = await compressImage(receipt);
+      const filePath = `${user?.id}/${Date.now()}.jpg`;
+      const { data: upload } = await supabase.storage.from('receipts').upload(filePath, compressed);
       if (upload) {
         const { data: { publicUrl } } = supabase.storage.from('receipts').getPublicUrl(filePath);
         receiptUrl = publicUrl;

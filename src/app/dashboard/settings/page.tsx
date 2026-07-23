@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ListSkeleton } from '@/components/ui/skeleton';
+import { compressImage } from '@/lib/compress-image';
 import { saveSettings, changePassword, clearAllData } from '@/lib/actions';
 import { Settings, Moon, Sun, Upload, Download, Trash2, Key, Plus, X, Image as ImageIcon } from 'lucide-react';
 
@@ -57,10 +58,10 @@ export default function SettingsPage() {
     try {
       let logoUrl = settings?.logo_url || '';
       if (logoFile) {
+        const compressed = await compressImage(logoFile, 400, 0.8);
         const { data: { user } } = await supabase.auth.getUser();
-        const ext = logoFile.name.split('.').pop();
-        const path = `logos/${user?.id}.${ext}`;
-        const { data: upload, error: uploadErr } = await supabase.storage.from('receipts').upload(path, logoFile, { upsert: true });
+        const path = `logos/${user?.id}.jpg`;
+        const { data: upload, error: uploadErr } = await supabase.storage.from('receipts').upload(path, compressed, { upsert: true });
         if (uploadErr) throw new Error('Logo upload failed: ' + uploadErr.message);
         if (upload) {
           const { data: { publicUrl } } = supabase.storage.from('receipts').getPublicUrl(path);
