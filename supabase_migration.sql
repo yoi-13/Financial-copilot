@@ -80,6 +80,10 @@ CREATE POLICY "Users can insert own reports"
   ON daily_reports FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
+CREATE POLICY "Users can delete own reports"
+  ON daily_reports FOR DELETE
+  USING (auth.uid() = user_id);
+
 -- 5. Storage bucket for receipts
 INSERT INTO storage.buckets (id, name, public) 
 VALUES ('receipts', 'receipts', false)
