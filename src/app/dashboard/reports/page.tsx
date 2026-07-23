@@ -24,7 +24,7 @@ export default function ReportsPage() {
 
   useEffect(() => {
     supabase.from('user_settings').select('*').maybeSingle().then(({ data }) => {
-      if (data) setPdfSettings(data);
+      if (data) setPdfSettings({ ...data, logo_url: data.logo_url ? data.logo_url + (data.logo_url.includes('?') ? '&' : '?') + 't=' + Date.now() : '' });
     });
   }, []);
 

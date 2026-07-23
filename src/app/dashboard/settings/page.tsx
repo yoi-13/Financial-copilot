@@ -65,7 +65,7 @@ export default function SettingsPage() {
         if (uploadErr) throw new Error('Logo upload failed: ' + uploadErr.message);
         if (upload) {
           const { data: { publicUrl } } = supabase.storage.from('receipts').getPublicUrl(path);
-          logoUrl = publicUrl;
+          logoUrl = publicUrl + '?t=' + Date.now();
         }
       }
       await saveSettings({
