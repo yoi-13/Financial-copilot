@@ -86,8 +86,8 @@ CREATE POLICY "Users can delete own reports"
 
 -- 5. Storage bucket for receipts
 INSERT INTO storage.buckets (id, name, public) 
-VALUES ('receipts', 'receipts', false)
-ON CONFLICT (id) DO NOTHING;
+VALUES ('receipts', 'receipts', true)
+ON CONFLICT (id) DO UPDATE SET public = true;
 
 CREATE POLICY "Users can upload own receipts"
   ON storage.objects FOR INSERT
