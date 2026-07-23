@@ -176,10 +176,10 @@ export default function ReportsPage() {
           <div className="relative z-50 w-full max-w-sm rounded-[10px] border bg-card p-6 shadow-lg mx-4 text-center space-y-4">
             <p className="text-sm font-medium">Include inventory snapshot in the PDF?</p>
             <div className="space-y-2">
-              <Button className="w-full" onClick={() => { downloadReportPdf(pdfReport, true, { businessName: pdfSettings?.business_name, currency: pdfSettings?.currency, logoUrl: pdfSettings?.logo_url }); setPdfReport(null); }}>
+              <Button className="w-full" variant={pdfSettings?.pdf_include_inventory !== false ? 'default' : 'outline'} onClick={() => { downloadReportPdf(pdfReport, true, { businessName: pdfSettings?.business_name, currency: pdfSettings?.currency, logoUrl: pdfSettings?.logo_url }); setPdfReport(null); }}>
                 <Download className="h-4 w-4 mr-2" />Yes, include inventory
               </Button>
-              <Button variant="outline" className="w-full" onClick={() => { downloadReportPdf(pdfReport, false, { businessName: pdfSettings?.business_name, currency: pdfSettings?.currency, logoUrl: pdfSettings?.logo_url }); setPdfReport(null); }}>
+              <Button variant={pdfSettings?.pdf_include_inventory === false ? 'default' : 'outline'} className="w-full" onClick={() => { downloadReportPdf(pdfReport, false, { businessName: pdfSettings?.business_name, currency: pdfSettings?.currency, logoUrl: pdfSettings?.logo_url }); setPdfReport(null); }}>
                 No, skip inventory
               </Button>
               <button onClick={() => setPdfReport(null)} className="text-xs text-muted-foreground hover:text-foreground bg-transparent border-none cursor-pointer pt-1">

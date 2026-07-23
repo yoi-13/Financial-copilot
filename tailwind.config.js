@@ -7,50 +7,50 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        border: "hsl(216 5% 88%)",
-        input: "hsl(216 5% 88%)",
-        ring: "hsl(215 25% 30%)",
-        background: "hsl(220 15% 96%)",
-        foreground: "hsl(220 10% 10%)",
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
         primary: {
-          DEFAULT: "hsl(215 80% 45%)",
-          foreground: "hsl(0 0% 100%)",
+          DEFAULT: "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))",
         },
         secondary: {
-          DEFAULT: "hsl(215 20% 92%)",
-          foreground: "hsl(215 40% 25%)",
+          DEFAULT: "hsl(var(--secondary))",
+          foreground: "hsl(var(--secondary-foreground))",
         },
         muted: {
-          DEFAULT: "hsl(215 15% 92%)",
-          foreground: "hsl(215 10% 50%)",
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
         },
         accent: {
-          DEFAULT: "hsl(215 80% 45%)",
-          foreground: "hsl(215 40% 25%)",
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
         },
         destructive: {
-          DEFAULT: "hsl(0 75% 50%)",
-          foreground: "hsl(0 0% 100%)",
+          DEFAULT: "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))",
         },
         card: {
-          DEFAULT: "hsl(0 0% 100%)",
-          foreground: "hsl(220 10% 10%)",
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
         },
         popover: {
-          DEFAULT: "hsl(0 0% 100%)",
-          foreground: "hsl(220 10% 10%)",
+          DEFAULT: "hsl(var(--popover))",
+          foreground: "hsl(var(--popover-foreground))",
         },
         green: {
-          DEFAULT: "hsl(142 60% 38%)",
-          bg: "hsl(142 60% 95%)",
+          DEFAULT: "hsl(var(--green))",
+          bg: "hsl(var(--green-bg))",
         },
         amber: {
-          DEFAULT: "hsl(32 90% 45%)",
-          bg: "hsl(32 90% 94%)",
+          DEFAULT: "hsl(var(--amber))",
+          bg: "hsl(var(--amber-bg))",
         },
         red: {
-          DEFAULT: "hsl(0 75% 50%)",
-          bg: "hsl(0 75% 95%)",
+          DEFAULT: "hsl(var(--red))",
+          bg: "hsl(var(--red-bg))",
         },
       },
       borderRadius: {
