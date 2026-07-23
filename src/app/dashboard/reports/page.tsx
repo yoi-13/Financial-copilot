@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { FileText, Download, ChevronLeft, ChevronRight, Search, Plus, X } from 'lucide-react';
+import { FileText, Download, ChevronLeft, ChevronRight, Search, Plus, X, Loader2 } from 'lucide-react';
+import JSZip from 'jszip';
 
 export default function ReportsPage() {
   const [reports, setReports] = useState<any[]>([]);
@@ -18,6 +19,7 @@ export default function ReportsPage() {
   const [backfill, setBackfill] = useState({ date: '', sales: '', expenses: '', note: '' });
   const [backfillMsg, setBackfillMsg] = useState('');
   const [pdfReport, setPdfReport] = useState<any | null>(null);
+  const [downloadingReceipts, setDownloadingReceipts] = useState(false);
 
   const today = new Date().toISOString().split('T')[0];
   const REPORTS_PER_PAGE = 7;
@@ -81,6 +83,39 @@ export default function ReportsPage() {
   };
 
   const promptPdf = (report: any) => setPdfReport(report);
+
+  const downloadReceipts = async (report: any) => {
+    const expenses = report.expenses_snapshot || [];
+    const withReceipts = expenses.filter((e: any) => e.receipt_url);
+    if (withReceipts.length === 0) return;
+
+    setDownloadingReceipts(true);
+    try {
+      const zip = new JSZip();
+      const folder = zip.folder(`receipts-${report.report_date}`);
+
+      for (const exp of withReceipts) {
+        const path = exp.receipt_url.split('/public/receipts/')[1];
+        if (!path) continue;
+        const { data } = await supabase.storage.from('receipts').download(path);
+        if (data) {
+          const ext = path.split('.').pop() || 'jpg';
+          const name = `${exp.description || 'receipt'}.${ext}`;
+          folder?.file(name, data);
+        }
+      }
+
+      const blob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `receipts-${report.report_date}.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setDownloadingReceipts(false);
+    }
+  };
 
   function groupedReports(all: any[]) {
     const groups: { key: string; label: string; reports: any[] }[] = [];
@@ -212,9 +247,15 @@ export default function ReportsPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-semibold">{selectedReport.report_date}</h2>
-            <Button variant="outline" size="sm" onClick={() => promptPdf(selectedReport)}>
-              <Download className="h-3.5 w-3.5 mr-1.5" />PDF
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => downloadReceipts(selectedReport)} disabled={downloadingReceipts}>
+                {downloadingReceipts ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Download className="h-3.5 w-3.5 mr-1.5" />}
+                Receipts
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => promptPdf(selectedReport)}>
+                <Download className="h-3.5 w-3.5 mr-1.5" />PDF
+              </Button>
+            </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {[
@@ -318,9 +359,14 @@ export default function ReportsPage() {
                         </span>
                       </div>
                     </div>
-                    <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); promptPdf(item.report); }}>
-                      <Download className="h-3.5 w-3.5" />
-                    </Button>
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); downloadReceipts(item.report); }}>
+                        <Download className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); promptPdf(item.report); }}>
+                        <FileText className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               )
