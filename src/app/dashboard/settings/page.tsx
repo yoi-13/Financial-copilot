@@ -60,7 +60,8 @@ export default function SettingsPage() {
         const { data: { user } } = await supabase.auth.getUser();
         const ext = logoFile.name.split('.').pop();
         const path = `logos/${user?.id}.${ext}`;
-        const { data: upload } = await supabase.storage.from('receipts').upload(path, logoFile, { upsert: true });
+        const { data: upload, error: uploadErr } = await supabase.storage.from('receipts').upload(path, logoFile, { upsert: true });
+        if (uploadErr) throw new Error('Logo upload failed: ' + uploadErr.message);
         if (upload) {
           const { data: { publicUrl } } = supabase.storage.from('receipts').getPublicUrl(path);
           logoUrl = publicUrl;
