@@ -4,6 +4,8 @@ import { supabase } from '@/lib/supabase';
 import { useRouter, usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { LayoutDashboard, Package, Receipt, FileText, ClipboardCheck, LogOut, Menu, X, ChevronLeft } from 'lucide-react';
+import { ToastProvider } from '@/components/toast-provider';
+import { ErrorBoundary } from '@/components/error-boundary';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -144,7 +146,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <div className="text-xs font-bold uppercase tracking-[0.12em] text-primary">Financial Copilot</div>
           </div>
         )}
-        {children}
+        <ErrorBoundary>
+          <ToastProvider>
+            {children}
+          </ToastProvider>
+        </ErrorBoundary>
       </main>
     </div>
   );

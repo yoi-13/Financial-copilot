@@ -5,11 +5,16 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { ListSkeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/components/toast-provider';
 import { Package, Plus, Pencil, Trash2, X, Check, PackagePlus } from 'lucide-react';
+import { addInventory, updateInventory, deleteInventory } from '@/lib/actions';
+import type { InventoryItem } from '@/lib/database.types';
 
 export default function InventoryPage() {
-  const [items, setItems] = useState<any[]>([]);
+  const { toast } = useToast();
+  const [items, setItems] = useState<InventoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState('');
   const [unit, setUnit] = useState('packs');
@@ -24,37 +29,54 @@ export default function InventoryPage() {
   const load = async () => {
     const { data } = await supabase.from('inventory_items').select('*').order('name');
     if (data) setItems(data);
+    setLoading(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editingId) {
-      await supabase.from('inventory_items').update({ name, unit, optimal_stock: Number(optimal), current_stock: Number(current) }).eq('id', editingId);
-    } else {
-      const { data: { user } } = await supabase.auth.getUser();
-      await supabase.from('inventory_items').insert([{ name, unit, optimal_stock: Number(optimal), current_stock: Number(current), user_id: user?.id }]);
+    try {
+      if (editingId) {
+        await updateInventory(editingId, { name, unit, optimal_stock: Number(optimal), current_stock: Number(current) });
+        toast('Item updated.', 'success');
+      } else {
+        await addInventory({ name, unit, optimal_stock: Number(optimal), current_stock: Number(current) });
+        toast('Item added.', 'success');
+      }
+      resetForm();
+      setLoading(true);
+      await load();
+    } catch (err: any) {
+      toast(err.message, 'error');
     }
-    resetForm();
-    load();
   };
 
-  const edit = (item: any) => {
+  const edit = (item: InventoryItem) => {
     setName(item.name); setUnit(item.unit); setOptimal(String(item.optimal_stock)); setCurrent(String(item.current_stock));
     setEditingId(item.id); setShowForm(true);
   };
 
   const remove = async (id: string) => {
-    await supabase.from('inventory_items').delete().eq('id', id);
-    load();
+    try {
+      await deleteInventory(id);
+      toast('Item deleted.', 'success');
+      await load();
+    } catch (err: any) {
+      toast(err.message, 'error');
+    }
   };
 
-  const handleRestock = async (id: string, currentStock: number) => {
+  const handleRestock = async (id: string, item: InventoryItem) => {
     const qty = Number(restockQty);
     if (!qty || qty <= 0) return;
-    await supabase.from('inventory_items').update({ current_stock: currentStock + qty }).eq('id', id);
-    setRestockingId(null);
-    setRestockQty('');
-    load();
+    try {
+      await supabase.from('inventory_items').update({ current_stock: item.current_stock + qty }).eq('id', id);
+      setRestockingId(null);
+      setRestockQty('');
+      toast('Stock updated.', 'success');
+      await load();
+    } catch (err: any) {
+      toast(err.message, 'error');
+    }
   };
 
   const resetForm = () => {
@@ -93,7 +115,9 @@ export default function InventoryPage() {
         </Card>
       )}
 
-      {items.length === 0 ? (
+      {loading ? (
+        <ListSkeleton rows={5} />
+      ) : items.length === 0 ? (
         <Card>
           <CardContent className="p-8 text-center text-sm text-muted-foreground">
             <Package className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
@@ -114,9 +138,9 @@ export default function InventoryPage() {
                       onChange={e => setRestockQty(e.target.value)}
                       className="flex-1 h-8 text-sm text-center"
                       autoFocus
-                      onKeyDown={e => { if (e.key === 'Enter') handleRestock(item.id, item.current_stock); }}
+                      onKeyDown={e => { if (e.key === 'Enter') handleRestock(item.id, item); }}
                     />
-                    <Button variant="default" size="sm" className="h-8 w-8 p-0 shrink-0" onClick={() => handleRestock(item.id, item.current_stock)}>
+                    <Button variant="default" size="sm" className="h-8 w-8 p-0 shrink-0" onClick={() => handleRestock(item.id, item)}>
                       <Check className="h-4 w-4" />
                     </Button>
                     <Button variant="ghost" size="sm" className="h-8 w-8 p-0 shrink-0" onClick={() => { setRestockingId(null); setRestockQty(''); }}>

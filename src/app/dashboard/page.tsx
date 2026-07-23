@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp, TrendingDown, AlertTriangle, ArrowRight, Package } from 'lucide-react';
+import { CardSkeleton, ListSkeleton } from '@/components/ui/skeleton';
 
 type Range = 'month' | 'year' | 'all';
 
@@ -19,6 +20,8 @@ const severityColor = 'bg-red-bg text-red border-red/30';
 const barColor = 'bg-red';
 
 export default function DashboardPage() {
+  const [dashboardLoading, setDashboardLoading] = useState(true);
+  const [cumulativeLoading, setCumulativeLoading] = useState(true);
   const [userName, setUserName] = useState('');
   const [lowStock, setLowStock] = useState<any[]>([]);
   const [todayExpenses, setTodayExpenses] = useState(0);
@@ -48,6 +51,7 @@ export default function DashboardPage() {
 
       const { data: report } = await supabase.from('daily_reports').select('id').eq('report_date', today).maybeSingle();
       if (report) setDayClosed(true);
+      setDashboardLoading(false);
     };
     load();
   }, [today]);
@@ -67,6 +71,7 @@ export default function DashboardPage() {
       } else {
         setCumulative({ sales: 0, expenses: 0, net: 0, count: 0 });
       }
+      setCumulativeLoading(false);
     };
     loadCumulative();
   }, [range, monthStart, yearStart]);
@@ -126,20 +131,26 @@ export default function DashboardPage() {
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Today</h2>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-          {[
-            { label: 'Sales', value: todaySales !== null ? `RM${todaySales.toLocaleString()}` : 'Not closed', color: 'text-foreground' },
-            { label: 'Expenses', value: `RM${todayExpenses.toLocaleString()}`, color: 'text-foreground' },
-            { label: 'Net', value: displayNet !== null ? `RM${displayNet.toLocaleString()}` : '—', color: displayNet !== null ? (displayNet >= 0 ? 'text-green' : 'text-red') : '' },
-          ].map((item, i) => (
-            <Card key={i} className="border-t-[3px]" style={{ borderTopColor: i === 0 ? 'hsl(215 80% 45%)' : i === 1 ? 'hsl(32 90% 45%)' : 'hsl(142 60% 38%)' }}>
-              <CardContent className="p-4 sm:p-5">
-                <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{item.label}</div>
-                <div className={`text-xl sm:text-2xl font-bold tracking-tight mt-1 ${item.color}`}>{item.value}</div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        {dashboardLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+            <CardSkeleton /><CardSkeleton /><CardSkeleton />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+            {[
+              { label: 'Sales', value: todaySales !== null ? `RM${todaySales.toLocaleString()}` : 'Not closed', color: 'text-foreground' },
+              { label: 'Expenses', value: `RM${todayExpenses.toLocaleString()}`, color: 'text-foreground' },
+              { label: 'Net', value: displayNet !== null ? `RM${displayNet.toLocaleString()}` : '—', color: displayNet !== null ? (displayNet >= 0 ? 'text-green' : 'text-red') : '' },
+            ].map((item, i) => (
+              <Card key={i} className="border-t-[3px]" style={{ borderTopColor: i === 0 ? 'hsl(215 80% 45%)' : i === 1 ? 'hsl(32 90% 45%)' : 'hsl(142 60% 38%)' }}>
+                <CardContent className="p-4 sm:p-5">
+                  <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{item.label}</div>
+                  <div className={`text-xl sm:text-2xl font-bold tracking-tight mt-1 ${item.color}`}>{item.value}</div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </section>
 
       <section>
@@ -161,7 +172,11 @@ export default function DashboardPage() {
             ))}
           </div>
         </div>
-        {cumulative.count > 0 ? (
+        {cumulativeLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+            <CardSkeleton /><CardSkeleton /><CardSkeleton />
+          </div>
+        ) : cumulative.count > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
             {[
               { label: 'Total Sales', value: `RM${cumulative.sales.toLocaleString()}`, color: '' },

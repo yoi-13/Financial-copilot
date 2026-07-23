@@ -6,11 +6,16 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { ListSkeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/components/toast-provider';
 import { Receipt, Plus, Pencil, Trash2, X, Save, Ban, FileText } from 'lucide-react';
+import { addExpense as addExpenseAction, updateExpense as updateExpenseAction, deleteExpense as deleteExpenseAction } from '@/lib/actions';
+import type { Expense } from '@/lib/database.types';
 
 export default function ExpensesPage() {
   const router = useRouter();
-  const [expenses, setExpenses] = useState<any[]>([]);
+  const { toast } = useToast();
+  const [expenses, setExpenses] = useState<Expense[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [desc, setDesc] = useState('');
   const [amount, setAmount] = useState('');
@@ -19,6 +24,7 @@ export default function ExpensesPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDesc, setEditDesc] = useState('');
   const [editAmount, setEditAmount] = useState('');
+  const [loading, setLoading] = useState(true);
 
   const today = new Date().toISOString().split('T')[0];
 
@@ -26,7 +32,8 @@ export default function ExpensesPage() {
     const init = async () => {
       const { data: report } = await supabase.from('daily_reports').select('id').eq('report_date', today).maybeSingle();
       if (report) setDayClosed(true);
-      loadExpenses();
+      await loadExpenses();
+      setLoading(false);
     };
     init();
   }, [today]);
@@ -38,7 +45,7 @@ export default function ExpensesPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (dayClosed) { alert('Today is already closed.'); return; }
+    if (dayClosed) { toast('Today is already closed.', 'error'); return; }
     const { data: { user } } = await supabase.auth.getUser();
     let receiptUrl = '';
     if (receipt) {
@@ -50,14 +57,17 @@ export default function ExpensesPage() {
         receiptUrl = publicUrl;
       }
     }
-    await supabase.from('expenses').insert([{
-      description: desc, amount: Number(amount), receipt_url: receiptUrl, user_id: user?.id,
-    }]);
-    setDesc(''); setAmount(''); setReceipt(null); setShowForm(false);
-    loadExpenses();
+    try {
+      await addExpenseAction({ description: desc, amount: Number(amount), receipt_url: receiptUrl || undefined });
+      setDesc(''); setAmount(''); setReceipt(null); setShowForm(false);
+      toast('Expense added.', 'success');
+      await loadExpenses();
+    } catch (err: any) {
+      toast(err.message, 'error');
+    }
   };
 
-  const startEdit = (exp: any) => {
+  const startEdit = (exp: Expense) => {
     setEditingId(exp.id);
     setEditDesc(exp.description);
     setEditAmount(String(exp.amount));
@@ -70,20 +80,29 @@ export default function ExpensesPage() {
   };
 
   const saveEdit = async (id: string) => {
-    if (dayClosed) { alert('Cannot edit. Today is already closed.'); return; }
-    await supabase.from('expenses').update({ description: editDesc, amount: Number(editAmount) }).eq('id', id);
-    cancelEdit();
-    loadExpenses();
+    if (dayClosed) { toast('Cannot edit. Today is already closed.', 'error'); return; }
+    try {
+      await updateExpenseAction(id, { description: editDesc, amount: Number(editAmount) });
+      cancelEdit();
+      toast('Expense updated.', 'success');
+      await loadExpenses();
+    } catch (err: any) {
+      toast(err.message, 'error');
+    }
   };
 
   const remove = async (id: string) => {
-    if (dayClosed) { alert('Cannot delete. Today is already closed.'); return; }
-    if (!confirm('Delete this expense?')) return;
-    await supabase.from('expenses').delete().eq('id', id);
-    loadExpenses();
+    if (dayClosed) { toast('Cannot delete. Today is already closed.', 'error'); return; }
+    try {
+      await deleteExpenseAction(id);
+      toast('Expense deleted.', 'success');
+      await loadExpenses();
+    } catch (err: any) {
+      toast(err.message, 'error');
+    }
   };
 
-  const total = expenses.reduce((s: number, e: any) => s + Number(e.amount), 0);
+  const total = expenses.reduce((s: number, e: Expense) => s + Number(e.amount), 0);
 
   return (
     <div className="space-y-6 max-w-[600px]">
@@ -129,7 +148,9 @@ export default function ExpensesPage() {
         </Card>
       )}
 
-      {expenses.length === 0 ? (
+      {loading ? (
+        <ListSkeleton rows={4} />
+      ) : expenses.length === 0 ? (
         <Card>
           <CardContent className="p-8 text-center text-sm text-muted-foreground">
             <Receipt className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
