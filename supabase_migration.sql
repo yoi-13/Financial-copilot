@@ -103,6 +103,11 @@ CREATE POLICY "Users can read own receipts"
     auth.role() = 'authenticated'
   );
 
+CREATE POLICY "Users can update own receipts"
+  ON storage.objects FOR UPDATE
+  USING (bucket_id = 'receipts')
+  WITH CHECK (bucket_id = 'receipts');
+
 -- 6. Helper function: auto-update updated_at
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
