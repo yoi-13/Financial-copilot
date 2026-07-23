@@ -138,6 +138,42 @@ export interface Database {
         };
         Relationships: [];
       };
+      user_settings: {
+        Row: {
+          id: string;
+          business_name: string;
+          logo_url: string;
+          currency: string;
+          sale_types: Json;
+          pdf_include_inventory: boolean;
+          created_at: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          id?: string;
+          business_name?: string;
+          logo_url?: string;
+          currency?: string;
+          sale_types?: Json;
+          pdf_include_inventory?: boolean;
+          created_at?: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          id?: string;
+          business_name?: string;
+          logo_url?: string;
+          currency?: string;
+          sale_types?: Json;
+          pdf_include_inventory?: boolean;
+          created_at?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -146,6 +182,7 @@ export interface Database {
 }
 
 export type Tables<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Row'];
+export type UserSettings = Tables<'user_settings'>;
 export type InventoryItem = Tables<'inventory_items'>;
 export type Expense = Tables<'expenses'>;
 export type DailySale = Tables<'daily_sales'>;

@@ -111,3 +111,23 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER set_inventory_updated_at
   BEFORE UPDATE ON inventory_items
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- 7. User Settings (single row per user)
+CREATE TABLE IF NOT EXISTS user_settings (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  business_name TEXT DEFAULT '',
+  logo_url TEXT DEFAULT '',
+  currency TEXT DEFAULT 'RM',
+  sale_types JSONB DEFAULT '["Cash","QR","Account Transfer","Card","E-hailing"]',
+  pdf_include_inventory BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  UNIQUE(user_id)
+);
+
+ALTER TABLE user_settings ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can manage own settings"
+  ON user_settings
+  USING (auth.uid() = user_id);

@@ -3,9 +3,10 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter, usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { LayoutDashboard, Package, Receipt, FileText, ClipboardCheck, LogOut, Menu, X, ChevronLeft } from 'lucide-react';
+import { LayoutDashboard, Package, Receipt, FileText, ClipboardCheck, LogOut, Menu, X, ChevronLeft, Settings } from 'lucide-react';
 import { ToastProvider } from '@/components/toast-provider';
 import { ErrorBoundary } from '@/components/error-boundary';
+import { ThemeProvider } from '@/components/theme-provider';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -13,6 +14,7 @@ const navItems = [
   { href: '/dashboard/expenses', label: 'Expenses', icon: Receipt },
   { href: '/dashboard/closing', label: 'Close Day', icon: ClipboardCheck },
   { href: '/dashboard/reports', label: 'Reports', icon: FileText },
+  { href: '/dashboard/settings', label: 'Settings', icon: Settings },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -148,7 +150,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         )}
         <ErrorBoundary>
           <ToastProvider>
-            {children}
+            <ThemeProvider>
+              {children}
+            </ThemeProvider>
           </ToastProvider>
         </ErrorBoundary>
       </main>

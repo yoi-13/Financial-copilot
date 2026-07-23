@@ -12,7 +12,6 @@ import { ClipboardCheck, ArrowLeft, ArrowRight, Check, Plus, X, Receipt, Package
 type StockEntry = { id: string; name: string; unit: string; optimal_stock: number; current_stock: number };
 type SaleEntry = { type: string; amount: number };
 
-const SALE_TYPES = ['Cash', 'QR', 'Account Transfer', 'Card', 'E-hailing'];
 const STEPS = ['Audit', 'Expenses', 'Sales', 'Review'];
 
 export default function ClosingWizard() {
@@ -22,7 +21,8 @@ export default function ClosingWizard() {
   const [expenses, setExpenses] = useState<any[]>([]);
   const [newExpense, setNewExpense] = useState({ desc: '', amount: '' });
   const [sales, setSales] = useState<SaleEntry[]>([]);
-  const [saleType, setSaleType] = useState(SALE_TYPES[0]);
+  const [saleTypes, setSaleTypes] = useState<string[]>(['Cash', 'QR', 'Account Transfer', 'Card', 'E-hailing']);
+  const [saleType, setSaleType] = useState('Cash');
   const [saleAmount, setSaleAmount] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
@@ -38,6 +38,14 @@ export default function ClosingWizard() {
       if (step === 0) {
         const { data: items } = await supabase.from('inventory_items').select('*').order('name');
         if (items) setStocks(items);
+        const { data: settings } = await supabase.from('user_settings').select('sale_types').maybeSingle();
+        if (settings) {
+          const st = settings as any;
+          if (st.sale_types?.length) {
+            setSaleTypes(st.sale_types);
+            if (!st.sale_types.includes(saleType)) setSaleType(st.sale_types[0]);
+          }
+        }
       }
       if (step === 1) {
         const { data: exps } = await supabase.from('expenses').select('*').eq('expense_date', today).order('created_at');
@@ -255,7 +263,7 @@ export default function ClosingWizard() {
             </div>
             <p className="text-sm text-muted-foreground">Add each sales transaction by type and amount.</p>
             <div className="flex flex-col sm:flex-row gap-2">
-              <Select options={SALE_TYPES.map(t => ({ value: t, label: t }))} value={saleType} onChange={e => setSaleType(e.target.value)} />
+              <Select options={saleTypes.map(t => ({ value: t, label: t }))} value={saleType} onChange={e => setSaleType(e.target.value)} />
               <div className="flex gap-2">
                 <Input type="number" step="0.01" placeholder="Amount" value={saleAmount} onChange={e => setSaleAmount(e.target.value)} className="w-full sm:w-28" />
                 <Button size="sm" onClick={addSale} disabled={!saleAmount || Number(saleAmount) <= 0} className="shrink-0">

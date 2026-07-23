@@ -17,26 +17,58 @@ function rect(doc: jsPDF, x: number, y: number, w: number, h: number, color?: [n
   else doc.rect(x, y, w, h);
 }
 
-export function generateReportPdf(report: any, includeInventory: boolean = true): jsPDF {
+type PdfOptions = {
+  businessName?: string;
+  currency?: string;
+  logoUrl?: string;
+};
+
+async function addLogo(doc: jsPDF, logoUrl: string): Promise<number> {
+  try {
+    const response = await fetch(logoUrl);
+    const blob = await response.blob();
+    const ext = blob.type.split('/')[1];
+    if (ext !== 'png' && ext !== 'jpeg' && ext !== 'jpg') return 0;
+    const dataUrl = await new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.readAsDataURL(blob);
+    });
+    const imgH = 14;
+    const imgW = 14;
+    doc.addImage(dataUrl, ext as 'png' | 'jpeg', PAGE_W - MARGIN - imgW, 20, imgW, imgH);
+    return imgW + 4;
+  } catch {
+    return 0;
+  }
+}
+
+export async function generateReportPdf(report: any, includeInventory: boolean = true, opts?: PdfOptions): Promise<jsPDF> {
   const doc = new jsPDF('p', 'mm', 'a4');
+  const cur = opts?.currency || 'RM';
+  const bizName = opts?.businessName || 'FINANCIAL COPILOT';
 
   // ── Header ──
+  if (opts?.logoUrl) {
+    await addLogo(doc, opts.logoUrl);
+  }
+
   doc.setFont(FONT, 'bold');
-  doc.setFontSize(18);
-  doc.text('FINANCIAL COPILOT', MARGIN, 28);
+  doc.setFontSize(16);
+  doc.text(bizName, MARGIN, 26);
 
   doc.setFont(FONT, 'normal');
   doc.setFontSize(10);
   doc.setTextColor(...COLORS.gray);
-  doc.text('Daily Operations Report', MARGIN, 35);
+  doc.text('Daily Operations Report', MARGIN, 33);
 
   doc.setFontSize(11);
   doc.setTextColor(...COLORS.black);
-  doc.text(report.report_date, MARGIN, 44);
+  doc.text(report.report_date, MARGIN, 42);
 
-  rect(doc, MARGIN, 49, PAGE_W - 2 * MARGIN, 0.5, COLORS.light);
+  rect(doc, MARGIN, 47, PAGE_W - 2 * MARGIN, 0.5, COLORS.light);
 
-  let y = 58;
+  let y = 56;
 
   // ── Summary Cards ──
   const cardW = (PAGE_W - 2 * MARGIN - 8) / 3;
@@ -46,9 +78,9 @@ export function generateReportPdf(report: any, includeInventory: boolean = true)
   const net = Number(report.net_profit) || 0;
 
   const summaryItems = [
-    { label: 'Total Sales', value: `RM ${sales.toLocaleString()}`, color: COLORS.black },
-    { label: 'Total Expenses', value: `RM ${expenses.toLocaleString()}`, color: COLORS.black },
-    { label: 'Net Profit', value: `RM ${net.toLocaleString()}`, color: net >= 0 ? COLORS.green : COLORS.red },
+    { label: 'Total Sales', value: `${cur} ${sales.toLocaleString()}`, color: COLORS.black },
+    { label: 'Total Expenses', value: `${cur} ${expenses.toLocaleString()}`, color: COLORS.black },
+    { label: 'Net Profit', value: `${cur} ${net.toLocaleString()}`, color: net >= 0 ? COLORS.green : COLORS.red },
   ];
 
   summaryItems.forEach((item, i) => {
@@ -67,8 +99,8 @@ export function generateReportPdf(report: any, includeInventory: boolean = true)
   y += cardH + 12;
 
   // ── Sales Breakdown ──
-  const items = report.sales_snapshot?.items;
-  if (items && items.length > 0) {
+  const saleItems = report.sales_snapshot?.items;
+  if (saleItems && saleItems.length > 0) {
     doc.setFont(FONT, 'bold');
     doc.setFontSize(11);
     doc.setTextColor(...COLORS.black);
@@ -86,16 +118,16 @@ export function generateReportPdf(report: any, includeInventory: boolean = true)
     y += 5;
 
     doc.setTextColor(...COLORS.black);
-    items.forEach((item: any) => {
+    saleItems.forEach((item: any) => {
       doc.text(item.type, colX[0], y);
-      doc.text(`RM ${Number(item.amount).toLocaleString()}`, colX[1], y, { align: 'right' });
+      doc.text(`${cur} ${Number(item.amount).toLocaleString()}`, colX[1], y, { align: 'right' });
       y += 6;
     });
 
     rect(doc, MARGIN, y - 3, PAGE_W - 2 * MARGIN, 0.3, COLORS.light);
     doc.setFont(FONT, 'bold');
     doc.text('Total', colX[0], y + 2);
-    doc.text(`RM ${sales.toLocaleString()}`, colX[1], y + 2, { align: 'right' });
+    doc.text(`${cur} ${sales.toLocaleString()}`, colX[1], y + 2, { align: 'right' });
     y += 12;
   }
 
@@ -123,14 +155,14 @@ export function generateReportPdf(report: any, includeInventory: boolean = true)
     doc.setTextColor(...COLORS.black);
     expItems.forEach((item: any) => {
       doc.text(item.description || item.note || 'Expense', colX[0], y);
-      doc.text(`RM ${Number(item.amount).toLocaleString()}`, colX[1], y, { align: 'right' });
+      doc.text(`${cur} ${Number(item.amount).toLocaleString()}`, colX[1], y, { align: 'right' });
       y += 6;
     });
 
     rect(doc, MARGIN, y - 3, PAGE_W - 2 * MARGIN, 0.3, COLORS.light);
     doc.setFont(FONT, 'bold');
     doc.text('Total', colX[0], y + 2);
-    doc.text(`RM ${expenses.toLocaleString()}`, colX[1], y + 2, { align: 'right' });
+    doc.text(`${cur} ${expenses.toLocaleString()}`, colX[1], y + 2, { align: 'right' });
     y += 12;
   }
 
@@ -172,19 +204,19 @@ export function generateReportPdf(report: any, includeInventory: boolean = true)
 
   // ── Footer ──
   if (y > PAGE_H - 30) { doc.addPage(); y = 30; }
-  
+
   rect(doc, MARGIN, PAGE_H - 20, PAGE_W - 2 * MARGIN, 0.3, COLORS.light);
   doc.setFont(FONT, 'normal');
   doc.setFontSize(7);
   doc.setTextColor(...COLORS.gray);
   const now = new Date();
   const ts = now.toLocaleString('en-MY', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short', year: 'numeric' });
-  doc.text(`Generated: ${ts} · Financial Copilot`, MARGIN, PAGE_H - 14);
+  doc.text(`Generated: ${ts} · ${bizName}`, MARGIN, PAGE_H - 14);
 
   return doc;
 }
 
-export function downloadReportPdf(report: any, includeInventory: boolean = true) {
-  const doc = generateReportPdf(report, includeInventory);
+export async function downloadReportPdf(report: any, includeInventory: boolean = true, opts?: PdfOptions) {
+  const doc = await generateReportPdf(report, includeInventory, opts);
   doc.save(`report-${report.report_date}.pdf`);
 }

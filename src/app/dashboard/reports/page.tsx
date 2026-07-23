@@ -19,7 +19,14 @@ export default function ReportsPage() {
   const [backfill, setBackfill] = useState({ date: '', sales: '', expenses: '', note: '' });
   const [backfillMsg, setBackfillMsg] = useState('');
   const [pdfReport, setPdfReport] = useState<any | null>(null);
+  const [pdfSettings, setPdfSettings] = useState<any>(null);
   const [downloadingReceipts, setDownloadingReceipts] = useState(false);
+
+  useEffect(() => {
+    supabase.from('user_settings').select('*').maybeSingle().then(({ data }) => {
+      if (data) setPdfSettings(data);
+    });
+  }, []);
 
   const today = new Date().toISOString().split('T')[0];
   const REPORTS_PER_PAGE = 7;
@@ -169,10 +176,10 @@ export default function ReportsPage() {
           <div className="relative z-50 w-full max-w-sm rounded-[10px] border bg-card p-6 shadow-lg mx-4 text-center space-y-4">
             <p className="text-sm font-medium">Include inventory snapshot in the PDF?</p>
             <div className="space-y-2">
-              <Button className="w-full" onClick={() => { downloadReportPdf(pdfReport, true); setPdfReport(null); }}>
+              <Button className="w-full" onClick={() => { downloadReportPdf(pdfReport, true, { businessName: pdfSettings?.business_name, currency: pdfSettings?.currency, logoUrl: pdfSettings?.logo_url }); setPdfReport(null); }}>
                 <Download className="h-4 w-4 mr-2" />Yes, include inventory
               </Button>
-              <Button variant="outline" className="w-full" onClick={() => { downloadReportPdf(pdfReport, false); setPdfReport(null); }}>
+              <Button variant="outline" className="w-full" onClick={() => { downloadReportPdf(pdfReport, false, { businessName: pdfSettings?.business_name, currency: pdfSettings?.currency, logoUrl: pdfSettings?.logo_url }); setPdfReport(null); }}>
                 No, skip inventory
               </Button>
               <button onClick={() => setPdfReport(null)} className="text-xs text-muted-foreground hover:text-foreground bg-transparent border-none cursor-pointer pt-1">
