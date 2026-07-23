@@ -104,47 +104,49 @@ export default function InventoryPage() {
         <div className="space-y-2">
           {items.map(item => (
             <Card key={item.id} className="hover:border-primary/50 transition-colors">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-sm font-medium">{item.name}</div>
-                    <div className="text-xs text-muted-foreground mt-0.5">
-                      Current: {item.current_stock} {item.unit} · Optimal: {item.optimal_stock} {item.unit}
-                      {item.current_stock < item.optimal_stock && (
-                        <Badge variant="destructive" className="ml-2 text-[10px] px-1.5 py-0">Needs restock</Badge>
-                      )}
+              <CardContent className="p-3 sm:p-4">
+                {restockingId === item.id ? (
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      placeholder="Qty to add"
+                      value={restockQty}
+                      onChange={e => setRestockQty(e.target.value)}
+                      className="flex-1 h-8 text-sm text-center"
+                      autoFocus
+                      onKeyDown={e => { if (e.key === 'Enter') handleRestock(item.id, item.current_stock); }}
+                    />
+                    <Button variant="default" size="sm" className="h-8 w-8 p-0 shrink-0" onClick={() => handleRestock(item.id, item.current_stock)}>
+                      <Check className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 shrink-0" onClick={() => { setRestockingId(null); setRestockQty(''); }}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium">{item.name}</div>
+                      <div className="text-xs text-muted-foreground mt-0.5 flex flex-wrap items-center gap-x-2">
+                        <span>{item.current_stock} / {item.optimal_stock} {item.unit}</span>
+                        {item.current_stock < item.optimal_stock && (
+                          <Badge variant="destructive" className="text-[10px] px-1.5 py-0">Needs restock</Badge>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 self-end sm:self-auto">
+                      <Button variant="outline" size="sm" className="h-8 w-8 p-0" title="Restock" onClick={() => { setRestockingId(item.id); setRestockQty(''); }}>
+                        <PackagePlus className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Edit" onClick={() => edit(item)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive" title="Delete" onClick={() => remove(item.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex gap-1.5">
-                    {restockingId === item.id ? (
-                      <div className="flex items-center gap-1.5">
-                        <Input
-                          type="number"
-                          placeholder="Qty"
-                          value={restockQty}
-                          onChange={e => setRestockQty(e.target.value)}
-                          className="w-16 h-7 text-xs text-center"
-                          autoFocus
-                          onKeyDown={e => { if (e.key === 'Enter') handleRestock(item.id, item.current_stock); }}
-                        />
-                        <Button variant="default" size="sm" className="h-7 w-7 p-0" onClick={() => handleRestock(item.id, item.current_stock)}>
-                          <Check className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => { setRestockingId(null); setRestockQty(''); }}>
-                          <X className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <>
-                        <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => { setRestockingId(item.id); setRestockQty(''); }}>
-                          <PackagePlus className="h-3.5 w-3.5" />Restock
-                        </Button>
-                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => edit(item)}><Pencil className="h-3.5 w-3.5" /></Button>
-                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive hover:text-destructive" onClick={() => remove(item.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
-                      </>
-                    )}
-                  </div>
-                </div>
+                )}
               </CardContent>
             </Card>
           ))}
