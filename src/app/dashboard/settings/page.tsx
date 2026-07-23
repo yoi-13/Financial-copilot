@@ -76,6 +76,8 @@ export default function SettingsPage() {
         logo_url: logoUrl,
       });
       setLogoFile(null);
+      setLogoPreview(logoUrl);
+      setSettings({ id: settings?.id || '', business_name: businessName, currency, sale_types: saleTypes, pdf_include_inventory: pdfIncludeInv, logo_url: logoUrl, user_id: settings?.user_id || '', created_at: settings?.created_at || '', updated_at: '' });
       toast('Settings saved.', 'success');
     } catch (err: any) {
       toast(err.message, 'error');
