@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { LayoutDashboard, Package, Receipt, FileText, ClipboardCheck, LogOut, Menu, X, ChevronLeft, Settings } from 'lucide-react';
@@ -59,7 +60,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           const Icon = item.icon;
           const isActive = pathname === item.href;
           return (
-            <a
+            <Link
               key={item.href}
               href={item.href}
               onClick={closeMobile}
@@ -72,7 +73,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             >
               <Icon className="h-4 w-4 shrink-0" />
               {!collapsed && <span className="truncate">{item.label}</span>}
-            </a>
+            </Link>
           );
         })}
       </div>
